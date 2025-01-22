@@ -1,0 +1,31 @@
+name: BossBarTimer
+version: '1.0.0'
+main: com.hinaplugin.bossBarTimer.BossBarTimer
+api-version: '1.20'
+authors: [ hina2113 ]
+description: BossBarのタイマーを作成する
+
+commands:
+  timer:
+    permission: timer.commands
+
+permissions:
+  timer.commands.admin:
+    children:
+      - timer.commands
+      - timer.commands.create
+      - timer.commands.remove
+      - timer.commands.delete
+      - timer.commands.reload
+    default: op
+  timer.commands.player:
+    children:
+      - timer.commands
+      - timer.commands.create
+      - timer.commands.remove
+    default: true
+  timer.commands: {}
+  timer.commands.create: {}
+  timer.commands.remove: {}
+  timer.commands.delete: {}
+  timer.commands.reload: {}

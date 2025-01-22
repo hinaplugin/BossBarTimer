@@ -1,0 +1,17 @@
+count-down-title: "ゲーム残り時間: [hour][min][sec]です．"
+count-up-title: "ゲーム経過時間: [hour][min][sec]です．"
+hour: "[hour]時間"
+minute: "[min]分"
+second: "[sec]秒"
+end: "<green>[timer]が終了しました!</green>"
+default:
+  player: true
+  command-block: true
+  console: true
+color:
+  green:
+    percentage: 51-100
+  yellow:
+    percentage: 21-50
+  red:
+    percentage: 0-20
