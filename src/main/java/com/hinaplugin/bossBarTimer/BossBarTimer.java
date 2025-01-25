@@ -2,10 +2,10 @@ package com.hinaplugin.bossBarTimer;
 
 import com.google.common.collect.Lists;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.util.List;
@@ -38,25 +38,15 @@ public final class BossBarTimer extends JavaPlugin {
         // Plugin shutdown logic
         if (!countUpTimers.isEmpty()){
             for (final CountUpTimer countUpTimer : countUpTimers){
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove minecraft:" + countUpTimer.getName());
-                    }
-                }.runTaskLater(plugin, 0L);
-                countUpTimer.getBossBar().removeAll();
+                final NamespacedKey key = new NamespacedKey("minecraft", countUpTimer.getName());
+                Bukkit.removeBossBar(key);
                 countUpTimer.cancel();
             }
         }
         if (!countDownTimers.isEmpty()){
             for (final CountDownTimer countDownTimer : countDownTimers){
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove minecraft:" + countDownTimer.getName());
-                    }
-                }.runTaskLater(plugin, 0L);
-                countDownTimer.getBossBar().removeAll();
+                final NamespacedKey key = new NamespacedKey("minecraft", countDownTimer.getName());
+                Bukkit.removeBossBar(key);
                 countDownTimer.cancel();
             }
         }
