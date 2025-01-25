@@ -376,6 +376,19 @@ public class Commands implements CommandExecutor, TabCompleter {
                     }
                 }
             }
+        }else if (strings.length == 4){
+            if (strings[0].equalsIgnoreCase("downcreate")){
+                if (commandSender.hasPermission("timer.commands.create")){
+                    if (strings[3].isEmpty()){
+                        complete.add("true");
+                        complete.add("false");
+                    }else if (strings[3].startsWith("t")){
+                        complete.add("true");
+                    }else if (strings[3].startsWith("f")){
+                        complete.add("false");
+                    }
+                }
+            }
         }
         return complete;
     }
