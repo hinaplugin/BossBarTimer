@@ -4,20 +4,19 @@ import com.google.common.collect.Lists;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.command.*;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.logging.Level;
 
 public class Commands implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
         final MiniMessage miniMessage = MiniMessage.miniMessage();
-        final Level level = Level.INFO;
         switch (strings.length){
             case 1 -> {
                 if (strings[0].equalsIgnoreCase("reload")){
@@ -34,21 +33,17 @@ public class Commands implements CommandExecutor, TabCompleter {
             case 2 -> {
                 if (strings[0].equalsIgnoreCase("upcreate")) {
                     if (commandSender.hasPermission("timer.commands.create")) {
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                final String name = strings[1];
-                                if (Commands.this.isNameUsed(name)){
-                                    commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
-                                    return;
-                                }
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar add " + name + " \"timer\"");
-                                final boolean all = BossBarTimer.config.getBoolean("default.player", true);
-                                CountUpTimer countUpTimer = new CountUpTimer(name, commandSender.getName(), Commands.this.getBossBar(name), all);
-                                countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                BossBarTimer.countUpTimers.add(countUpTimer);
-                            }
-                        }.runTaskLater(BossBarTimer.plugin, 0L);
+                        final String name = strings[1];
+                        if (this.isNameUsed(name)){
+                            commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
+                            return true;
+                        }
+                        final NamespacedKey key = new NamespacedKey("minecraft", name);
+                        final BossBar bossBar = BossBarTimer.plugin.getServer().createBossBar(key, "timer", BarColor.GREEN, BarStyle.SOLID);
+                        final boolean all = BossBarTimer.config.getBoolean("default.player", true);
+                        CountUpTimer countUpTimer = new CountUpTimer(name, commandSender.getName(), bossBar, all);
+                        countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                        BossBarTimer.countUpTimers.add(countUpTimer);
                     } else {
                         this.noPermission(commandSender);
                     }
@@ -64,7 +59,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                     countUpTimer.cancel();
                                     BossBarTimer.countUpTimers.remove(countUpTimer);
                                     commandSender.sendMessage(miniMessage.deserialize("<green>[" + name + "]を削除しました．</green>"));
-                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove " + name);
+                                    Bukkit.removeBossBar(new NamespacedKey("minecraft", name));
                                     return true;
                                 }
                             }
@@ -76,7 +71,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                     countDownTimer.cancel();
                                     BossBarTimer.countDownTimers.remove(countDownTimer);
                                     commandSender.sendMessage(miniMessage.deserialize("<green>[" + name + "]を削除しました．</green>"));
-                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove " + name);
+                                    Bukkit.removeBossBar(new NamespacedKey("minecraft", name));
                                     return true;
                                 }
                             }
@@ -96,7 +91,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                 countUpTimer.cancel();
                                 BossBarTimer.countUpTimers.remove(countUpTimer);
                                 commandSender.sendMessage(miniMessage.deserialize("<green>[" + name + "]を削除しました．</green>"));
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove " + name);
+                                Bukkit.removeBossBar(new NamespacedKey("minecraft", name));
                                 return true;
                             }
                         }
@@ -106,7 +101,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                                 countDownTimer.cancel();
                                 BossBarTimer.countDownTimers.remove(countDownTimer);
                                 commandSender.sendMessage(miniMessage.deserialize("<green>[" + name + "]を削除しました．</green>"));
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove " + name);
+                                Bukkit.removeBossBar(new NamespacedKey("minecraft", name));
                                 return true;
                             }
                         }
@@ -121,33 +116,29 @@ public class Commands implements CommandExecutor, TabCompleter {
             case 3 -> {
                 if (strings[0].equalsIgnoreCase("upcreate")){
                     if (commandSender.hasPermission("timer.commands.create")){
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                final String name = strings[1];
-                                if (Commands.this.isNameUsed(name)){
-                                    commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
-                                    return;
-                                }
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar add " + name + " \"timer\"");
-                                if (commandSender instanceof ConsoleCommandSender){
-                                    final boolean all = BossBarTimer.config.getBoolean("default.console", true);
-                                    CountUpTimer countUpTimer = new CountUpTimer(name, "Console", Commands.this.getBossBar(name), all);
-                                    countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                    BossBarTimer.countUpTimers.add(countUpTimer);
-                                }else if (commandSender instanceof BlockCommandSender){
-                                    final boolean all = BossBarTimer.config.getBoolean("default.command-block", true);
-                                    CountUpTimer countUpTimer = new CountUpTimer(name, "CommandBlock", Commands.this.getBossBar(name), all);
-                                    countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                    BossBarTimer.countUpTimers.add(countUpTimer);
-                                }else {
-                                    final boolean all = Boolean.parseBoolean(strings[2]);
-                                    CountUpTimer countUpTimer = new CountUpTimer(name, commandSender.getName(), Commands.this.getBossBar(name), all);
-                                    countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                    BossBarTimer.countUpTimers.add(countUpTimer);
-                                }
-                            }
-                        }.runTaskLater(BossBarTimer.plugin, 0L);
+                        final String name = strings[1];
+                        if (this.isNameUsed(name)){
+                            commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
+                            return true;
+                        }
+                        final NamespacedKey key = new NamespacedKey("minecraft", name);
+                        final BossBar bossBar = BossBarTimer.plugin.getServer().createBossBar(key, "timer", BarColor.GREEN, BarStyle.SOLID);
+                        if (commandSender instanceof ConsoleCommandSender){
+                            final boolean all = BossBarTimer.config.getBoolean("default.console", true);
+                            CountUpTimer countUpTimer = new CountUpTimer(name, "Console", bossBar, all);
+                            countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                            BossBarTimer.countUpTimers.add(countUpTimer);
+                        }else if (commandSender instanceof BlockCommandSender){
+                            final boolean all = BossBarTimer.config.getBoolean("default.command-block", true);
+                            CountUpTimer countUpTimer = new CountUpTimer(name, "CommandBlock", bossBar, all);
+                            countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                            BossBarTimer.countUpTimers.add(countUpTimer);
+                        }else {
+                            final boolean all = Boolean.parseBoolean(strings[2]);
+                            CountUpTimer countUpTimer = new CountUpTimer(name, commandSender.getName(), bossBar, all);
+                            countUpTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                            BossBarTimer.countUpTimers.add(countUpTimer);
+                        }
                     }else {
                         this.noPermission(commandSender);
                     }
@@ -155,38 +146,34 @@ public class Commands implements CommandExecutor, TabCompleter {
                 }
                 if (strings[0].equalsIgnoreCase("downcreate")){
                     if (commandSender.hasPermission("timer.commands.create")){
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                final String name = strings[1];
-                                final String time = strings[2];
-                                if (Commands.this.isNameUsed(name)){
-                                    commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
-                                    return;
-                                }
-                                if (Commands.this.isNumeric(time)){
-                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar add " + name + " \"timer\"");
-                                    if (commandSender instanceof ConsoleCommandSender){
-                                        final boolean all = BossBarTimer.config.getBoolean("default.console", true);
-                                        CountDownTimer countdownTimer = new CountDownTimer(name, "Console", Commands.this.getBossBar(name), Integer.parseInt(time), all);
-                                        countdownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                        BossBarTimer.countDownTimers.add(countdownTimer);
-                                    }else if (commandSender instanceof BlockCommandSender){
-                                        final boolean all = BossBarTimer.config.getBoolean("default.command-block", true);
-                                        CountDownTimer countDownTimer = new CountDownTimer(name, "CommandBlock", Commands.this.getBossBar(name), Integer.parseInt(time), all);
-                                        countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                        BossBarTimer.countDownTimers.add(countDownTimer);
-                                    }else {
-                                        final boolean all = BossBarTimer.config.getBoolean("default.player", true);
-                                        CountDownTimer countDownTimer = new CountDownTimer(name, commandSender.getName(), Commands.this.getBossBar(name), Integer.parseInt(time), all);
-                                        countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                        BossBarTimer.countDownTimers.add(countDownTimer);
-                                    }
-                                }else {
-                                    commandSender.sendMessage(miniMessage.deserialize("<red>[" + time + "]は数値ではありません．</red>"));
-                                }
+                        final String name = strings[1];
+                        final String time = strings[2];
+                        if (this.isNameUsed(name)){
+                            commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
+                            return true;
+                        }
+                        if (this.isNumeric(time)){
+                            final NamespacedKey key = new NamespacedKey("minecraft", name);
+                            final BossBar bossBar = BossBarTimer.plugin.getServer().createBossBar(key, "timer", BarColor.GREEN, BarStyle.SOLID);
+                            if (commandSender instanceof ConsoleCommandSender){
+                                final boolean all = BossBarTimer.config.getBoolean("default.console", true);
+                                CountDownTimer countdownTimer = new CountDownTimer(name, "Console", bossBar, Integer.parseInt(time), all);
+                                countdownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                                BossBarTimer.countDownTimers.add(countdownTimer);
+                            }else if (commandSender instanceof BlockCommandSender){
+                                final boolean all = BossBarTimer.config.getBoolean("default.command-block", true);
+                                CountDownTimer countDownTimer = new CountDownTimer(name, "CommandBlock", bossBar, Integer.parseInt(time), all);
+                                countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                                BossBarTimer.countDownTimers.add(countDownTimer);
+                            }else {
+                                final boolean all = BossBarTimer.config.getBoolean("default.player", true);
+                                CountDownTimer countDownTimer = new CountDownTimer(name, commandSender.getName(), bossBar, Integer.parseInt(time), all);
+                                countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                                BossBarTimer.countDownTimers.add(countDownTimer);
                             }
-                        }.runTaskLater(BossBarTimer.plugin, 0L);
+                        }else {
+                            commandSender.sendMessage(miniMessage.deserialize("<red>[" + time + "]は数値ではありません．</red>"));
+                        }
                     }else {
                         this.noPermission(commandSender);
                     }
@@ -197,38 +184,34 @@ public class Commands implements CommandExecutor, TabCompleter {
             case 4 -> {
                 if (strings[0].equalsIgnoreCase("downcreate")){
                     if (commandSender.hasPermission("timer.commands.create")){
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                final String name = strings[1];
-                                final String time = strings[2];
-                                if (Commands.this.isNameUsed(name)){
-                                    commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
-                                    return;
-                                }
-                                if (Commands.this.isNumeric(time)){
-                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar add " + name + " \"timer\"");
-                                    if (commandSender instanceof ConsoleCommandSender){
-                                        final boolean all = BossBarTimer.config.getBoolean("default.console", true);
-                                        CountDownTimer countdownTimer = new CountDownTimer(name, "Console", Commands.this.getBossBar(name), Integer.parseInt(time), all);
-                                        countdownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                        BossBarTimer.countDownTimers.add(countdownTimer);
-                                    }else if (commandSender instanceof BlockCommandSender){
-                                        final boolean all = BossBarTimer.config.getBoolean("default.command-block", true);
-                                        CountDownTimer countDownTimer = new CountDownTimer(name, "CommandBlock", Commands.this.getBossBar(name), Integer.parseInt(time), all);
-                                        countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                        BossBarTimer.countDownTimers.add(countDownTimer);
-                                    }else {
-                                        final boolean all = Boolean.parseBoolean(strings[3]);
-                                        CountDownTimer countDownTimer = new CountDownTimer(name, commandSender.getName(), Commands.this.getBossBar(name), Integer.parseInt(time), all);
-                                        countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
-                                        BossBarTimer.countDownTimers.add(countDownTimer);
-                                    }
-                                }else {
-                                    commandSender.sendMessage(miniMessage.deserialize("<red>[" + time + "]は数値ではありません．</red>"));
-                                }
+                        final String name = strings[1];
+                        final String time = strings[2];
+                        if (this.isNameUsed(name)){
+                            commandSender.sendMessage(miniMessage.deserialize("<red>[" + name + "]は既に使われています．</red>"));
+                            return true;
+                        }
+                        if (this.isNumeric(time)){
+                            final NamespacedKey key = new NamespacedKey("minecraft", name);
+                            final BossBar bossBar = BossBarTimer.plugin.getServer().createBossBar(key, "timer", BarColor.GREEN, BarStyle.SOLID);
+                            if (commandSender instanceof ConsoleCommandSender){
+                                final boolean all = BossBarTimer.config.getBoolean("default.console", true);
+                                CountDownTimer countdownTimer = new CountDownTimer(name, "Console", bossBar, Integer.parseInt(time), all);
+                                countdownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                                BossBarTimer.countDownTimers.add(countdownTimer);
+                            }else if (commandSender instanceof BlockCommandSender){
+                                final boolean all = BossBarTimer.config.getBoolean("default.command-block", true);
+                                CountDownTimer countDownTimer = new CountDownTimer(name, "CommandBlock", bossBar, Integer.parseInt(time), all);
+                                countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                                BossBarTimer.countDownTimers.add(countDownTimer);
+                            }else {
+                                final boolean all = Boolean.parseBoolean(strings[3]);
+                                CountDownTimer countDownTimer = new CountDownTimer(name, commandSender.getName(), bossBar, Integer.parseInt(time), all);
+                                countDownTimer.runTaskTimerAsynchronously(BossBarTimer.plugin, 0L, 20L);
+                                BossBarTimer.countDownTimers.add(countDownTimer);
                             }
-                        }.runTaskLater(BossBarTimer.plugin, 0L);
+                        }else {
+                            commandSender.sendMessage(miniMessage.deserialize("<red>[" + time + "]は数値ではありません．</red>"));
+                        }
                     }else {
                         this.noPermission(commandSender);
                     }
@@ -408,10 +391,6 @@ public class Commands implements CommandExecutor, TabCompleter {
     private boolean isNameUsed(String name){
         final BossBar bossBar = BossBarTimer.plugin.getServer().getBossBar(new NamespacedKey("minecraft", name));
         return bossBar != null;
-    }
-
-    private BossBar getBossBar(String name){
-        return BossBarTimer.plugin.getServer().getBossBar(new NamespacedKey("minecraft", name));
     }
 
     private void sendUsage(CommandSender commandSender){
