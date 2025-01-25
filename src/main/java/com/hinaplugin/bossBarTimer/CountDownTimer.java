@@ -2,6 +2,7 @@ package com.hinaplugin.bossBarTimer;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
@@ -54,12 +55,8 @@ public class CountDownTimer extends BukkitRunnable {
                 player.sendMessage(MiniMessage.miniMessage().deserialize(BossBarTimer.config.getString("end", "").replace("[timer]", name)));
             }
             bossBar.removeAll();
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "bossbar remove minecraft:" + name);
-                }
-            }.runTaskLater(BossBarTimer.plugin, 0L);
+            final NamespacedKey key = new NamespacedKey("minecraft", name);
+            Bukkit.removeBossBar(key);
             this.cancel();
             BossBarTimer.countDownTimers.remove(this);
         }
